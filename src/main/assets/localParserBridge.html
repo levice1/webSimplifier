@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readability Parser</title>
+    <script src="Readability.js"></script>
+    <script>
+        async function parseArticle(url, returnType) {
+            console.log("Fetching article from:", url);
+            let fullUrl = "https://corsproxy.io/?url=" + encodeURIComponent(url);
+            try {
+                let response = await fetch(fullUrl, {
+                    method: "GET",
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch: " + response.status);
+                }
+
+                let htmlText = await response.text();
+                let doc = new DOMParser().parseFromString(htmlText, "text/html");
+                let article = new Readability(doc).parse();
+
+                if (!article) {
+                    window.AndroidInterface.onError("No article found by Readability");
+                    return;
+                }
+
+                let result;
+                switch (returnType) {
+                    case "html": {
+                        result = `
+                            <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <title>${article.title}</title>
+                                </head>
+                                <body>
+                                    ${article.content}
+                                </body>
+                            </html>
+                        `;
+                        break;
+                    }
+                    case "json": {
+                        let data = {
+                            title: article.title,
+                            content: article.textContent
+                        };
+                        result = JSON.stringify(data);
+                        break;
+                    }
+                    case "plain":
+                    default: {
+                        result = article.textContent;
+                        break;
+                    }
+                }
+
+                window.AndroidInterface.onParsed(result);
+            } catch (e) {
+                window.AndroidInterface.onError("Fetch Error: " + e.message);
+            }
+        }
+    </script>
+</head>
+<body>
+<h2>Processing article...</h2>
+</body>
+</html>
