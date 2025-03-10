@@ -51,7 +51,7 @@ object WebSimplifier {
                     Log.e(TAG, "Error: $error")
                     onError(error)
                     if (continuation.isActive) {
-                        continuation.resume("Error: $error")
+                        continuation.resume("")
                     }
                 }
             }, "AndroidInterface")

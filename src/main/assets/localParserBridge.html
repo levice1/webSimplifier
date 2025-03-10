@@ -21,7 +21,12 @@
                     throw new Error("Failed to fetch: " + response.status);
                 }
 
-                let htmlText = await response.text();
+                let contentType = response.headers.get('content-type') || '';
+                let match = contentType.match(/charset=([^;]+)/i);
+                let detectedCharset = match ? match[1].toLowerCase() : 'windows-1250';
+                let arrayBuf = await response.arrayBuffer();
+                let decoder = new TextDecoder(detectedCharset, { fatal: false });
+                let htmlText = decoder.decode(arrayBuf);
                 let doc = new DOMParser().parseFromString(htmlText, "text/html");
                 let article = new Readability(doc).parse();
 
